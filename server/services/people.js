@@ -26,29 +26,30 @@ const people = [
 ]
 
 const findPerson = _id => people.find(person => person._id === _id)
-const PersonDataLoader = new DataLoader(async ids => {
-  console.log('Loading people', ids)
-  return ids.map(findPerson)
-}, { cacheKeyFn: id => `${id}` })
-
 const resolvers = {
   Person: {
-    __resolveReference: ref => PersonDataLoader.load(ref._id)
+    __resolveReference: (ref, context) => {
+      console.log('Resolve Reference to Person', ref._id)
+      return context.PersonDataLoader.load(ref._id)
+    }
   },
   Query: {
-    person: (_obj, { _id }, context) => {
-      console.log('TS:', context.timestamp)
-      return PersonDataLoader.load(_id)
-    }
+    person: (_obj, { _id }, context) => context.PersonDataLoader.load(_id)
   }
 }
 
 module.exports = new ApolloServer({
   schema: buildFederatedSchema([{ typeDefs, resolvers }]),
-  // typeDefs, resolvers,
-  context: () => {
-    const timestamp = new Date().getTime()
-    console.log('creating people context', timestamp)
-    return { timestamp }
+  context: ({ req }) => {
+    console.log('Request', JSON.stringify(req.body))
+    return {
+      PersonDataLoader: new DataLoader(
+        async ids => {
+          console.log('Loading people', ids)
+          return ids.map(findPerson)
+        },
+        { cacheKeyFn: id => `${id}` }
+      )
+    }
   }
 })

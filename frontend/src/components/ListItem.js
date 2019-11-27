@@ -5,7 +5,11 @@ import gql from 'graphql-tag'
 
 export const GET_TEAM = gql`
   query getTeam($_id: Int) {
-    team(_id: $_id) { _id name people { _id name } }
+    team(_id: $_id) {
+      _id
+      name
+      people { _id name }
+    }
   }
 `
 
